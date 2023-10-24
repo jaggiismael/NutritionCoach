@@ -29,12 +29,12 @@ class Controller:
                     print("Wrong Input")
 
         while not exit:
-            user_input = input("I'm happy to help you. Are you interested in asking me some (n)utrition-related questions or would you prefer a (m)eal suggestion?\n").upper()
+            user_input = input("I'm happy to help you. Are you interested in asking me some (n)utrition-related questions or would you prefer (m)eal suggestions for today?\n").upper()
             match user_input:
                 case "N":
                     self.__nutritionCoaching()
                 case "M":
-                    print("I can't do that at the moment, " + self.user.firstname)
+                    self.__mealSuggestion()
                 case "EXIT":
                     exit = True
                 case _:
@@ -115,18 +115,27 @@ class Controller:
             context = messages
             messages.append({"role": "user", "content": systemPrompt + ". Question: " + userRequest})
 
-            answer = self.__api_service.sendPrompt(messages, 0.2)
+            answerVerified = False
+            attempts = 0
+            while not answerVerified:
+                answer = self.__api_service.sendPrompt(messages, 0.2)
 
-            if self.__controlLlmAnswer(context, userRequest, answer):
-                messages.append({"role": "assistant", "content": answer})
-                print(answer)
-            else:
-                messages.pop()
-                print("I'm sorry but I can't answer to this question, please ask something else")
+                if attempts > 2:
+                    print("I'm sorry but I can't answer to this question, please ask something else")
+                    answerVerified = True
+                    break
+                
+                if self.__controlLlmAnswer(context, userRequest, answer):
+                    messages.append({"role": "assistant", "content": answer})
+                    print(answer)
+                    answerVerified = True
+                else:
+                    messages.pop()
+                    attempts += 1
 
     def __controlLlmAnswer(self, context, question, answer):
         contextStr = ','.join(str(v) for v in context)
-        messages = [{"role": "system", "content": "Your job is to check whether the answer fits the question based on the context. If the answer and the question match, answer: True. If the last question and the answer do not match, answer: False. Don't explain the decision, just reply with true or false."}, 
+        messages = [{"role": "system", "content": "Your job is to check whether the answer fits the question based on the context. If the answer and the question match, answer: True. If the last question and the answer do not match, answer: False. The answer must not be racist, sexist or offensive. Don't explain the decision, just reply with true or false."}, 
               {"role": "user", "content": "Context: " + contextStr + " Question: " + question + " Answer: " + answer}]
         
         answer = self.__api_service.sendPrompt(messages, 0.2)
@@ -135,3 +144,23 @@ class Controller:
             return True
         
         return False
+    
+    def __mealSuggestion(self):
+        systemPrompt = "I would like a new recommendation on what to eat for breakfast, lunch and dinner. I only want one recommendation per meal. I want it in 3-4 sentences and without a greeting. The recommendation should be adapted to me, here is my profile: "  + self.user.__str__()
+        messages = [{"role": "system", "content": ""}, {"role": "user", "content": systemPrompt}]
+
+        while True:
+            answer = self.__api_service.sendPrompt(messages, 0.2)
+
+            print(answer)
+
+            userInput = input("You want to get new suggestions? (Yes / No)\n").upper()
+            if userInput == "NO":
+                break
+
+            messages.append({"role": "assistant", "content": answer})
+            messages.append({"role": "user", "content": systemPrompt})
+                
+
+
+
