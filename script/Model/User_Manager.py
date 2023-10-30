@@ -7,17 +7,8 @@ class UserManager:
         self.__filename = "user_data.json"
     
     def writeJSON(self, user):
-        print("Firstname:", user.firstname)
-        print("Lastname:", user.lastname)
-        print("Age:", user.age)
-        print("Gender:", user.gender)
-        print("Height:", user.height)
-        print("Weight:", user.weight)
-        print("Allergies:", user.allergies)
-        print("Dietary Target:", user.target)
-        print("Eating Habit:", user.habit)
-
-        with open(self.filename, "r") as file:
+        
+        with open(self.__filename, "r") as file:
             data = json.load(file)
 
         data.append(user.__dict__)

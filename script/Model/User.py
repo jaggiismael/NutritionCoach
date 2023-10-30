@@ -11,13 +11,13 @@ class User:
         self.habit = habit
 
     def __str__(self):
-        user_info = f"Firstname: {self.firstname}\n"
-        user_info += f"Lastname: {self.lastname}\n"
-        user_info += f"Age: {self.age}\n"
-        user_info += f"Gender: {self.gender}\n"
-        user_info += f"Height: {self.height}\n"
-        user_info += f"Weight: {self.weight}\n"
-        user_info += f"Allergies: {self.allergies}\n"
-        user_info += f"Dietary Target: {self.target}\n"
-        user_info += f"Eating Habits: {self.habit}\n"
+        user_info = f"Firstname: {self.firstname} "
+        user_info += f"Lastname: {self.lastname} "
+        user_info += f"Age: {self.age} "
+        user_info += f"Gender: {self.gender} "
+        user_info += f"Height: {self.height} "
+        user_info += f"Weight: {self.weight} "
+        user_info += f"Allergies: {self.allergies} "
+        user_info += f"Dietary Target: {self.target} "
+        user_info += f"Eating Habits: {self.habit} "
         return user_info
