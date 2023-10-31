@@ -1,4 +1,3 @@
-from platformdirs import user_runtime_dir
 from LLM import API_Service
 from Model import User
 from Model import User_Manager
@@ -12,7 +11,7 @@ class Controller:
             level=logging.DEBUG,
             format='%(asctime)s [%(levelname)s] - %(message)s',
             handlers=[
-                logging.FileHandler('register.log')
+                logging.FileHandler('program.log')
             ]
         )
 
@@ -150,7 +149,7 @@ class Controller:
             return False 
         
     def __nutritionCoaching(self):
-        systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Use this informations to provide personalised answers: " + self.user.__str__()
+        systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken conversation. Use this informations to provide personalised answers: " + self.user.__str__()
         messages = [{"role": "system", "content": ""}]
         while True:
             userRequest = input("Which question about nutrition you want to ask? \n")
@@ -167,21 +166,21 @@ class Controller:
             answerVerified = False
             attempts = 0
             while not answerVerified:
-                answer = self.__api_service.sendPrompt(messages, 0.2)
-                logging.info("Answer: " + answer)
 
                 if attempts > 2:
                     print("I'm sorry but I can't answer to this question, please ask something else")
                     logging.info("Question answering not possible")
                     answerVerified = True
                     break
-                
+
+                answer = self.__api_service.sendPrompt(messages, 0.2)
+                logging.info("Answer: " + answer)
+
                 if self.__controlLlmAnswer(context, userRequest, answer):
                     messages.append({"role": "assistant", "content": answer})
                     print(answer)
                     answerVerified = True
                 else:
-                    messages.pop()
                     attempts += 1
 
     def __controlLlmAnswer(self, context, question, answer):
@@ -189,9 +188,9 @@ class Controller:
         messages = [{"role": "system", "content": "Your job is to check whether the answer fits the question based on the context. If the answer and the question match, answer: True. If the last question and the answer do not match, answer: False. The answer must not be racist, sexist or offensive. Don't explain the decision, just reply with true or false."}, 
               {"role": "user", "content": "Context: " + contextStr + " Question: " + question + " Answer: " + answer}]
         
-        answer = self.__api_service.sendPrompt(messages, 0.2)
+        verifyAnswer = self.__api_service.sendPrompt(messages, 0.2)
 
-        if answer.find("True") or answer.find("true"):
+        if verifyAnswer.__contains__("True") or verifyAnswer.__contains__("true"):
             logging.info("Answer verified")
             return True
         
