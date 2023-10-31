@@ -1,5 +1,5 @@
 import json
-from Model import User
+from model.user import User
 
 class UserManager:
 
@@ -28,7 +28,7 @@ class UserManager:
                 break
 
         if user_data:
-            user = User.User(
+            user = User(
                 user_data['firstname'],
                 user_data['lastname'],
                 user_data['age'],

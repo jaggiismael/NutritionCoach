@@ -1,5 +1,5 @@
 import sys
-from Controller import Controller
+from controller import Controller
 
 if __name__ == "__main__":
 

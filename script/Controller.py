@@ -1,13 +1,13 @@
-from API.LLM_API import LLM_API
-from Model.User import User
-from Model.User_Manager import UserManager
-from UserInteraction.UserInteractionManager import Emotion, UserInteractionManager
+from api.llm_api import LlmApi
+from model.user import User
+from model.user_manager import UserManager
+from user_interaction.user_interaction_manager import Emotion, UserInteractionManager
 import logging
 
 
 class Controller:
     def __init__(self, platform):
-        self.__api_service = LLM_API()
+        self.__api_service = LlmApi()
         self.__user_manager = UserManager()
         self.__user_interaction_manager = UserInteractionManager(platform)
         logging.basicConfig(
@@ -47,10 +47,10 @@ class Controller:
             match user_input:
                 case "N":
                     logging.info("Start Nutrition Coaching")
-                    self.__nutritionCoaching()
+                    self.__nutritional_coaching()
                 case "M":
                     logging.info("Start Meal Suggestion")
-                    self.__mealSuggestion()
+                    self.__meal_suggestion()
                 case "EXIT":
                     logging.info("Application finished")
                     exit = True
@@ -81,14 +81,14 @@ class Controller:
         age = None
         while age == None:
             age = self.__user_interaction_manager.inputRegister("Enter your age: ")
-            if not self.__checkNumber(age, 0, 120):
+            if not self.__check_number(age, 0, 120):
                 age = None
         logging.info("Age: " + age)
 
         gender = None
         while gender == None:
             gender = self.__user_interaction_manager.inputRegister("Whats your gender. Enter the correct number\n1. Male\n2. Female\n")
-            if not self.__checkNumber(gender, 1, 2):
+            if not self.__check_number(gender, 1, 2):
                 gender = None
         match int(gender):
             case 1:
@@ -100,14 +100,14 @@ class Controller:
         height = None
         while height == None:
             height = self.__user_interaction_manager.inputRegister("Enter your height (in cm): ")
-            if not self.__checkNumber(height, 65, 220):
+            if not self.__check_number(height, 65, 220):
                 height = None
         logging.info("Height: " + height)
         
         weight = None
         while weight == None:
             weight = self.__user_interaction_manager.inputRegister("Enter your weight (in kg): ")
-            if not self.__checkNumber(weight, 0, 150):
+            if not self.__check_number(weight, 0, 150):
                 weight = None
         logging.info("Weight: " + weight)
         
@@ -119,7 +119,7 @@ class Controller:
         habit = None
         while habit == None:
             habit = self.__user_interaction_manager.inputRegister("What is your eating habit? Enter the correct number\n1. Omnivor (Eats everything)\n2. Vegetarian\n3. Vegan\n4. Pescetarian\n")
-            if not self.__checkNumber(habit, 1, 4):
+            if not self.__check_number(habit, 1, 4):
                 habit = None
         match int(habit):
             case 1:
@@ -132,12 +132,12 @@ class Controller:
                 habit = "Pescetarian"
         logging.info("Eating Habits: " + habit)
 
-        self.user = User.User(firstname, lastname, age, gender, height, weight, allergies, dietary_target, habit)
+        self.user = User(firstname, lastname, age, gender, height, weight, allergies, dietary_target, habit)
         self.__user_manager.writeJSON(self.user)
         logging.info("User-Profile saved")
         return True
 
-    def __checkNumber(self, input, min, max):
+    def __check_number(self, input, min, max):
         try:
             number = float(input)  
             if number >= min and number <= max:
@@ -151,7 +151,7 @@ class Controller:
             logging.info("Wrong Input")
             return False 
         
-    def __nutritionCoaching(self):
+    def __nutritional_coaching(self):
         systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken conversation. Use this informations to provide personalised answers: " + self.user.__str__()
         messages = [{"role": "system", "content": ""}]
         while True:
@@ -179,7 +179,7 @@ class Controller:
                 answer = self.__api_service.sendPrompt(messages, 0.2)
                 logging.info("Answer: " + answer)
 
-                if self.__controlLlmAnswer(context, userRequest, answer):
+                if self.__check_answer(context, userRequest, answer):
                     messages.append({"role": "assistant", "content": answer})
                     #Emotion change
                     self.__user_interaction_manager.output(answer, Emotion.HAPPY)
@@ -187,7 +187,7 @@ class Controller:
                 else:
                     attempts += 1
 
-    def __controlLlmAnswer(self, context, question, answer):
+    def __check_answer(self, context, question, answer):
         contextStr = ','.join(str(v) for v in context)
         messages = [{"role": "system", "content": "Your job is to check whether the answer fits the question based on the context. If the answer and the question match, answer: True. If the last question and the answer do not match, answer: False. The answer must not be racist, sexist or offensive. Don't explain the decision, just reply with true or false."}, 
               {"role": "user", "content": "Context: " + contextStr + " Question: " + question + " Answer: " + answer}]
@@ -201,7 +201,7 @@ class Controller:
         logging.info("Answer not verified")
         return False
     
-    def __mealSuggestion(self):
+    def __meal_suggestion(self):
         systemPrompt = "I would like a new recommendation on what to eat for breakfast, lunch and dinner. I only want one recommendation per meal. I want it in 3-4 sentences and without a greeting. The recommendation must be adapted to me, here is my profile: "  + self.user.__str__()
         messages = [{"role": "system", "content": ""}, {"role": "user", "content": systemPrompt}]
 

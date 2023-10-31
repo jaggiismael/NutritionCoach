@@ -1,6 +1,6 @@
 import openai
 
-class LlmService:
+class LlmApi:
     def __init__(self):
         
         openai.api_base = "https://api.deepinfra.com/v1/openai"
