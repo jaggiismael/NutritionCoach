@@ -1,12 +1,15 @@
-from LLM import API_Service
-from Model import User
-from Model import User_Manager
+from API.LLM_API import LLM_API
+from Model.User import User
+from Model.User_Manager import UserManager
+from UserInteraction.UserInteractionManager import Emotion, UserInteractionManager
 import logging
 
+
 class Controller:
-    def __init__(self):
-        self.__api_service = API_Service.LlmService()
-        self.__user_manager = User_Manager.UserManager()
+    def __init__(self, platform):
+        self.__api_service = LLM_API()
+        self.__user_manager = UserManager()
+        self.__user_interaction_manager = UserInteractionManager(platform)
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s [%(levelname)s] - %(message)s',
@@ -17,30 +20,30 @@ class Controller:
 
     def start(self):
         logging.info("Application started")
-        print("Hi I'm your personal nutrition coach, I will be happy to help you. You can always leave, just enter exit.\n")
+        self.__user_interaction_manager.greeting()
         exit = False
         profile_ok = False
         while not profile_ok:
-            user_input = input("Would you like to (L)og in or (R)egister?\n").upper()
+            user_input = self.__user_interaction_manager.inputDecision("Would you like to (L)ogin or (R)egister?\n", "Login", "Register").upper()
             match user_input:
                 case "L":
                     profile_ok = self.__login()
                     if profile_ok:
-                        print("Welcome back " + self.user.firstname)
+                        self.__user_interaction_manager.output("Welcome back " + self.user.firstname, Emotion.HAPPY)
                         logging.info("Login successful")
                 case "R":
                     profile_ok= self.__register()
                     if profile_ok:
-                        print("Nice to meet you, " + self.user.firstname)
+                        self.__user_interaction_manager.output("Nice to meet you, " + self.user.firstname, Emotion.HAPPY)
                         logging.info("Profile Creation successful")
                 case "EXIT":
                     exit = True
                     profile_ok = True
                 case _:
-                    print("Wrong Input")
+                    self.__user_interaction_manager.output("Wrong Input", Emotion.CONFUSED)
 
         while not exit:
-            user_input = input("Are you interested in asking me some (n)utrition-related questions or would you prefer (m)eal suggestions for today?\n").upper()
+            user_input = self.__user_interaction_manager.inputDecision("Are you interested in asking me some (n)utrition-related questions or would you prefer (m)eal suggestions for today?\n", "Nutrition", "Meal").upper()
             match user_input:
                 case "N":
                     logging.info("Start Nutrition Coaching")
@@ -52,17 +55,17 @@ class Controller:
                     logging.info("Application finished")
                     exit = True
                 case _:
-                    print("Wrong Input")
+                    self.__user_interaction_manager.output("Wrong Input", Emotion.CONFUSED)
         
     def __login(self):
         logging.info("Start Login")
-        firstname = input("To get your user profile, enter your Firstname and Lastname\nFirstname: ")
+        firstname = self.__user_interaction_manager.input("To get your user profile, enter your Firstname and Lastname\nFirstname: ")
         logging.info("Firstname: " + firstname)
-        lastname = input("Lastname: ")
+        lastname = self.__user_interaction_manager.input("Lastname: ")
         logging.info("Lastname: " + lastname)
         self.user = self.__user_manager.getUser(firstname, lastname)
         if self.user == None:
-            print("User not found")
+            self.__user_interaction_manager.output("User not found", Emotion.CONFUSED)
             logging.info("User not found")
             return False
         return True
@@ -70,21 +73,21 @@ class Controller:
 
     def __register(self):
         logging.info("Start Register")
-        firstname = input("Enter your first name: ")
+        firstname = self.__user_interaction_manager.inputRegister("Enter your first name: ")
         logging.info("Firstname: " + firstname)
-        lastname = input("Enter your last name: ")
+        lastname = self.__user_interaction_manager.inputRegister("Enter your last name: ")
         logging.info("Lastname: " + lastname)
 
         age = None
         while age == None:
-            age = input("Enter your age: ")
+            age = self.__user_interaction_manager.inputRegister("Enter your age: ")
             if not self.__checkNumber(age, 0, 120):
                 age = None
         logging.info("Age: " + age)
 
         gender = None
         while gender == None:
-            gender = input("Whats your gender. Enter the correct number\n1. Male\n2. Female\n")
+            gender = self.__user_interaction_manager.inputRegister("Whats your gender. Enter the correct number\n1. Male\n2. Female\n")
             if not self.__checkNumber(gender, 1, 2):
                 gender = None
         match int(gender):
@@ -96,26 +99,26 @@ class Controller:
 
         height = None
         while height == None:
-            height = input("Enter your height (in cm): ")
+            height = self.__user_interaction_manager.inputRegister("Enter your height (in cm): ")
             if not self.__checkNumber(height, 65, 220):
                 height = None
         logging.info("Height: " + height)
         
         weight = None
         while weight == None:
-            weight = input("Enter your weight (in kg): ")
+            weight = self.__user_interaction_manager.inputRegister("Enter your weight (in kg): ")
             if not self.__checkNumber(weight, 0, 150):
                 weight = None
         logging.info("Weight: " + weight)
         
-        allergies = input("Do you have any allergies? If yes, please specify. If not, enter 'None': ")
+        allergies = self.__user_interaction_manager.inputRegister("Do you have any allergies? If yes, please specify. If not, enter 'None': ")
         logging.info("Allergies: " + allergies)
-        dietary_target = input("What is your dietary target (e.g., lose weight, maintain weight, gain muscle)? ")
+        dietary_target = self.__user_interaction_manager.inputRegister("What is your dietary target (e.g., lose weight, maintain weight, gain muscle)? ")
         logging.info("Dietary Target: " + dietary_target)
 
         habit = None
         while habit == None:
-            habit = input("What is your eating habit? Enter the correct number\n1. Omnivor (Eats everything)\n2. Vegetarian\n3. Vegan\n4. Pescetarian\n")
+            habit = self.__user_interaction_manager.inputRegister("What is your eating habit? Enter the correct number\n1. Omnivor (Eats everything)\n2. Vegetarian\n3. Vegan\n4. Pescetarian\n")
             if not self.__checkNumber(habit, 1, 4):
                 habit = None
         match int(habit):
@@ -140,11 +143,11 @@ class Controller:
             if number >= min and number <= max:
                 return True
             else:
-                print("Please enter a valid number between "+str(min)+" and "+str(max)+"!")
+                self.__user_interaction_manager.output("Please enter a valid number between "+str(min)+" and "+str(max)+"!", Emotion.CONFUSED)
                 logging.info("Wrong Input")
                 return False
         except ValueError:
-            print("Please enter a valid number between "+str(min)+" and "+str(max)+"!")
+            self.__user_interaction_manager.output("Please enter a valid number between "+str(min)+" and "+str(max)+"!", Emotion.CONFUSED)
             logging.info("Wrong Input")
             return False 
         
@@ -152,7 +155,7 @@ class Controller:
         systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken conversation. Use this informations to provide personalised answers: " + self.user.__str__()
         messages = [{"role": "system", "content": ""}]
         while True:
-            userRequest = input("Which question about nutrition you want to ask? \n")
+            userRequest = self.__user_interaction_manager.input("Which question about nutrition you want to ask? \n")
 
             if(userRequest.lower() == "exit"):
                 logging.info("Nutrition Coaching finished")
@@ -168,7 +171,7 @@ class Controller:
             while not answerVerified:
 
                 if attempts > 2:
-                    print("I'm sorry but I can't answer to this question, please ask something else")
+                    self.__user_interaction_manager.output("I'm sorry but I can't answer to this question, please ask something else", Emotion.SAD)
                     logging.info("Question answering not possible")
                     answerVerified = True
                     break
@@ -178,7 +181,8 @@ class Controller:
 
                 if self.__controlLlmAnswer(context, userRequest, answer):
                     messages.append({"role": "assistant", "content": answer})
-                    print(answer)
+                    #Emotion change
+                    self.__user_interaction_manager.output(answer, Emotion.HAPPY)
                     answerVerified = True
                 else:
                     attempts += 1
@@ -205,9 +209,9 @@ class Controller:
             answer = self.__api_service.sendPrompt(messages, 0.2)
             logging.info("Meal Suggestion: " + answer)
 
-            print(answer)
+            self.__user_interaction_manager.output(answer, Emotion.HAPPY)
 
-            userInput = input("You want to get new suggestions? (Yes / No)\n").upper()
+            userInput = self.__user_interaction_manager.inputDecision("You want to get new suggestions? (Yes / No)\n", "Yes", "No").upper()
             if userInput == "NO":
                 logging.info("Meal Suggestion finished")
                 break
