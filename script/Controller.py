@@ -1,15 +1,26 @@
+import re
+#from api.emotion_api import EmotionApi
 from api.llm_api import LlmApi
 from model.user import User
 from model.user_manager import UserManager
 from user_interaction.user_interaction_manager import Emotion, UserInteractionManager
 import logging
+import os
 
 
 class Controller:
     def __init__(self, platform):
-        self.__api_service = LlmApi()
+        #Import API Keys as environment variables
+        with open("keys.txt") as config_file:
+            for line in config_file:
+                key, value = line.strip().split("=")
+                os.environ[key] = value
+        llm_key = os.environ.get("LLM_KEY")
+
+        self.__llm_api = LlmApi(key)
         self.__user_manager = UserManager()
         self.__user_interaction_manager = UserInteractionManager(platform)
+        #self.__emotion_api = EmotionApi()
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s [%(levelname)s] - %(message)s',
@@ -17,6 +28,8 @@ class Controller:
                 logging.FileHandler('program.log')
             ]
         )
+
+        
 
     def start(self):
         logging.info("Application started")
@@ -152,7 +165,7 @@ class Controller:
             return False 
         
     def __nutritional_coaching(self):
-        systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken conversation. Use this informations to provide personalised answers: " + self.user.__str__()
+        systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken ongoing conversation. Use this informations to provide personalised answers: " + self.user.__str__()
         messages = [{"role": "system", "content": ""}]
         while True:
             userRequest = self.__user_interaction_manager.input("Which question about nutrition you want to ask? \n")
@@ -176,12 +189,23 @@ class Controller:
                     answerVerified = True
                     break
 
-                answer = self.__api_service.sendPrompt(messages, 0.2)
+                answer = self.__llm_api.sendPrompt(messages, 0.2)
                 logging.info("Answer: " + answer)
 
                 if self.__check_answer(context, userRequest, answer):
                     messages.append({"role": "assistant", "content": answer})
-                    #Emotion change
+                    """Emotion detection
+                    emotion = self.__emotion_api.getEmotion(self.__get_two_sentences(answer))
+                    if 0.25 <= emotion <= 1.0:
+                        self.__user_interaction_manager.output(answer, Emotion.HAPPY)
+                    elif -0.25 <= emotion < 0.25:
+                        self.__user_interaction_manager.output(answer, Emotion.NEUTRAL)
+                    elif -1.0 <= emotion < -0.25:
+                        self.__user_interaction_manager.output(answer, Emotion.SAD)
+                    else:
+                        logging.error("Problem with emotion detection")
+                        self.__user_interaction_manager.output(answer, Emotion.NEUTRAL)
+                    """
                     self.__user_interaction_manager.output(answer, Emotion.HAPPY)
                     answerVerified = True
                 else:
@@ -192,7 +216,7 @@ class Controller:
         messages = [{"role": "system", "content": "Your job is to check whether the answer fits the question based on the context. If the answer and the question match, answer: True. If the last question and the answer do not match, answer: False. The answer must not be racist, sexist or offensive. Don't explain the decision, just reply with true or false."}, 
               {"role": "user", "content": "Context: " + contextStr + " Question: " + question + " Answer: " + answer}]
         
-        verifyAnswer = self.__api_service.sendPrompt(messages, 0.2)
+        verifyAnswer = self.__llm_api.sendPrompt(messages, 0.2)
 
         if verifyAnswer.__contains__("True") or verifyAnswer.__contains__("true"):
             logging.info("Answer verified")
@@ -206,7 +230,7 @@ class Controller:
         messages = [{"role": "system", "content": ""}, {"role": "user", "content": systemPrompt}]
 
         while True:
-            answer = self.__api_service.sendPrompt(messages, 0.2)
+            answer = self.__llm_api.sendPrompt(messages, 0.2)
             logging.info("Meal Suggestion: " + answer)
 
             self.__user_interaction_manager.output(answer, Emotion.HAPPY)
@@ -219,6 +243,14 @@ class Controller:
             messages.append({"role": "assistant", "content": answer})
             messages.append({"role": "user", "content": systemPrompt})
             logging.info("User want new suggestions")
+
+    def __get_two_sentences(self, answer):
+        sentences = re.split(r'(?<=[.!?])\s', answer)
+        if len(sentences) >= 2:
+            newAnswer = ' '.join(sentences[:2])
+        else:
+            newAnswer = answer
+        return newAnswer
                 
 
 

@@ -1,10 +1,10 @@
 import openai
 
 class LlmApi:
-    def __init__(self):
+    def __init__(self, key):
         
         openai.api_base = "https://api.deepinfra.com/v1/openai"
-        openai.api_key = ""
+        openai.api_key = key
         MODEL_DI = "meta-llama/Llama-2-70b-chat-hf"
 
     def sendPrompt(self, messages, temperature): 

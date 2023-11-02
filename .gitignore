@@ -208,3 +208,4 @@ dist/**
 *.xlf
 package.nls.*.json
 l10n/
+keys.txt

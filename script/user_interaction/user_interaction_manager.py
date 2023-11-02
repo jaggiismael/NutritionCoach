@@ -4,6 +4,7 @@ class Emotion(Enum):
     HAPPY = 1
     SAD = 2
     CONFUSED = 3
+    NEUTRAL = 4
 
 class UserInteractionManager:
     def __init__(self, platform):
