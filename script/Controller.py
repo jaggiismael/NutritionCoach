@@ -1,5 +1,5 @@
 import re
-#from api.emotion_api import EmotionApi
+from api.emotion_api import EmotionApi
 from api.llm_api import LlmApi
 from model.user import User
 from model.user_manager import UserManager
@@ -17,10 +17,10 @@ class Controller:
                 os.environ[key] = value
         llm_key = os.environ.get("LLM_KEY")
 
-        self.__llm_api = LlmApi(key)
+        self.__llm_api = LlmApi("")
         self.__user_manager = UserManager()
         self.__user_interaction_manager = UserInteractionManager(platform)
-        #self.__emotion_api = EmotionApi()
+        self.__emotion_api = EmotionApi()
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s [%(levelname)s] - %(message)s',
@@ -29,52 +29,50 @@ class Controller:
             ]
         )
 
-        
-
     def start(self):
         logging.info("Application started")
         self.__user_interaction_manager.greeting()
         exit = False
         profile_ok = False
         while not profile_ok:
-            user_input = self.__user_interaction_manager.inputDecision("Would you like to (L)ogin or (R)egister?\n", "Login", "Register").upper()
-            match user_input:
-                case "L":
-                    profile_ok = self.__login()
-                    if profile_ok:
-                        self.__user_interaction_manager.output("Welcome back " + self.user.firstname, Emotion.HAPPY)
-                        logging.info("Login successful")
-                case "R":
-                    profile_ok= self.__register()
-                    if profile_ok:
-                        self.__user_interaction_manager.output("Nice to meet you, " + self.user.firstname, Emotion.HAPPY)
-                        logging.info("Profile Creation successful")
-                case "EXIT":
-                    exit = True
-                    profile_ok = True
-                case _:
-                    self.__user_interaction_manager.output("Wrong Input", Emotion.CONFUSED)
+            user_input = self.__user_interaction_manager.inputDecision("Would you like to Login or Register?\n", "login", "register").upper()
+            if user_input == "LOGIN":
+                profile_ok = self.__login()
+                if profile_ok:
+                    self.__user_interaction_manager.output("Welcome back " + self.user.firstname, Emotion.HAPPY)
+                    logging.info("Login successful")
+            elif user_input == "REGISTER":
+                profile_ok= self.__register()
+                if profile_ok:
+                    self.__user_interaction_manager.output("Nice to meet you, " + self.user.firstname, Emotion.HAPPY)
+                    logging.info("Profile Creation successful")
+            elif user_input == "EXIT":
+                exit = True
+                profile_ok = True
+            else:
+                self.__user_interaction_manager.output("Thats not a valid answer", Emotion.CONFUSED)
 
         while not exit:
-            user_input = self.__user_interaction_manager.inputDecision("Are you interested in asking me some (n)utrition-related questions or would you prefer (m)eal suggestions for today?\n", "Nutrition", "Meal").upper()
-            match user_input:
-                case "N":
-                    logging.info("Start Nutrition Coaching")
-                    self.__nutritional_coaching()
-                case "M":
-                    logging.info("Start Meal Suggestion")
-                    self.__meal_suggestion()
-                case "EXIT":
-                    logging.info("Application finished")
-                    exit = True
-                case _:
-                    self.__user_interaction_manager.output("Wrong Input", Emotion.CONFUSED)
+            user_input = self.__user_interaction_manager.inputDecision("Are you interested in asking me some nutrition-related questions or would you prefer meal suggestions for today?\n", "nutrition", "meal").upper()
+            if user_input == "NUTRITION":
+                logging.info("Start Nutrition Coaching")
+                self.__nutritional_coaching()
+            elif user_input == "MEAL":
+                logging.info("Start Meal Suggestion")
+                self.__meal_suggestion()
+            elif user_input == "EXIT":
+                logging.info("Application finished")
+                exit = True
+            else:
+                self.__user_interaction_manager.output("Thats not a valid answer", Emotion.CONFUSED)
+        
+        #self.__user_interaction_manager.output("OK bye, I hope to see you again soon", Emotion.HAPPY)
         
     def __login(self):
         logging.info("Start Login")
-        firstname = self.__user_interaction_manager.input("To get your user profile, enter your Firstname and Lastname\nFirstname: ")
+        firstname = self.__user_interaction_manager.inputTerminal("To get your user profile, enter your Firstname and Lastname\nFirstname: ")
         logging.info("Firstname: " + firstname)
-        lastname = self.__user_interaction_manager.input("Lastname: ")
+        lastname = self.__user_interaction_manager.inputTerminal("Lastname: ")
         logging.info("Lastname: " + lastname)
         self.user = self.__user_manager.getUser(firstname, lastname)
         if self.user == None:
@@ -86,63 +84,62 @@ class Controller:
 
     def __register(self):
         logging.info("Start Register")
-        firstname = self.__user_interaction_manager.inputRegister("Enter your first name: ")
+        firstname = self.__user_interaction_manager.inputTerminal("Enter your first name: ")
         logging.info("Firstname: " + firstname)
-        lastname = self.__user_interaction_manager.inputRegister("Enter your last name: ")
+        lastname = self.__user_interaction_manager.inputTerminal("Enter your last name: ")
         logging.info("Lastname: " + lastname)
 
         age = None
         while age == None:
-            age = self.__user_interaction_manager.inputRegister("Enter your age: ")
+            age = self.__user_interaction_manager.inputTerminal("Enter your age: ")
             if not self.__check_number(age, 0, 120):
                 age = None
         logging.info("Age: " + age)
 
         gender = None
         while gender == None:
-            gender = self.__user_interaction_manager.inputRegister("Whats your gender. Enter the correct number\n1. Male\n2. Female\n")
+            gender = self.__user_interaction_manager.inputTerminal("Whats your gender. Enter the correct number\n1. Male\n2. Female\n")
             if not self.__check_number(gender, 1, 2):
                 gender = None
-        match int(gender):
-            case 1:
-                gender = "Male"
-            case 2:
-                gender = "Female"
+        if int(gender) == 1:
+            gender = "Male"
+        else:
+            gender = "Female"
         logging.info("Gender: " + gender)
 
         height = None
         while height == None:
-            height = self.__user_interaction_manager.inputRegister("Enter your height (in cm): ")
+            height = self.__user_interaction_manager.inputTerminal("Enter your height (in cm): ")
             if not self.__check_number(height, 65, 220):
                 height = None
         logging.info("Height: " + height)
         
         weight = None
         while weight == None:
-            weight = self.__user_interaction_manager.inputRegister("Enter your weight (in kg): ")
+            weight = self.__user_interaction_manager.inputTerminal("Enter your weight (in kg): ")
             if not self.__check_number(weight, 0, 150):
                 weight = None
         logging.info("Weight: " + weight)
         
-        allergies = self.__user_interaction_manager.inputRegister("Do you have any allergies? If yes, please specify. If not, enter 'None': ")
+        allergies = self.__user_interaction_manager.inputTerminal("Do you have any allergies? If yes, please specify. If not, enter 'None': ")
         logging.info("Allergies: " + allergies)
-        dietary_target = self.__user_interaction_manager.inputRegister("What is your dietary target (e.g., lose weight, maintain weight, gain muscle)? ")
+        dietary_target = self.__user_interaction_manager.inputTerminal("What is your dietary target (e.g., lose weight, maintain weight, gain muscle)? ")
         logging.info("Dietary Target: " + dietary_target)
 
         habit = None
         while habit == None:
-            habit = self.__user_interaction_manager.inputRegister("What is your eating habit? Enter the correct number\n1. Omnivor (Eats everything)\n2. Vegetarian\n3. Vegan\n4. Pescetarian\n")
+            habit = self.__user_interaction_manager.inputTerminal("What is your eating habit? Enter the correct number\n1. Omnivor (Eats everything)\n2. Vegetarian\n3. Vegan\n4. Pescetarian\n")
             if not self.__check_number(habit, 1, 4):
                 habit = None
-        match int(habit):
-            case 1:
-                habit = "Omnivor"
-            case 2:
-                habit = "Vegetarian"
-            case 3:
-                habit = "Vegan"
-            case 4:
-                habit = "Pescetarian"
+        if int(habit) == 1:
+        
+            habit = "Omnivor"
+        if int(habit) == 2:
+            habit = "Vegetarian"
+        if int(habit) == 3:
+            habit = "Vegan"
+        if int(habit) == 4:
+            habit = "Pescetarian"
         logging.info("Eating Habits: " + habit)
 
         self.user = User(firstname, lastname, age, gender, height, weight, allergies, dietary_target, habit)
@@ -194,7 +191,7 @@ class Controller:
 
                 if self.__check_answer(context, userRequest, answer):
                     messages.append({"role": "assistant", "content": answer})
-                    """Emotion detection
+                    #Emotion detection
                     emotion = self.__emotion_api.getEmotion(self.__get_two_sentences(answer))
                     if 0.25 <= emotion <= 1.0:
                         self.__user_interaction_manager.output(answer, Emotion.HAPPY)
@@ -205,8 +202,7 @@ class Controller:
                     else:
                         logging.error("Problem with emotion detection")
                         self.__user_interaction_manager.output(answer, Emotion.NEUTRAL)
-                    """
-                    self.__user_interaction_manager.output(answer, Emotion.HAPPY)
+                    
                     answerVerified = True
                 else:
                     attempts += 1
@@ -239,10 +235,12 @@ class Controller:
             if userInput == "NO":
                 logging.info("Meal Suggestion finished")
                 break
-
-            messages.append({"role": "assistant", "content": answer})
-            messages.append({"role": "user", "content": systemPrompt})
-            logging.info("User want new suggestions")
+            elif userInput == "YES":
+                messages.append({"role": "assistant", "content": answer})
+                messages.append({"role": "user", "content": systemPrompt})
+                logging.info("User want new suggestions")
+            else:
+                self.__user_interaction_manager.output("Thats not a valid answer", Emotion.CONFUSED)
 
     def __get_two_sentences(self, answer):
         sentences = re.split(r'(?<=[.!?])\s', answer)
@@ -251,7 +249,4 @@ class Controller:
         else:
             newAnswer = answer
         return newAnswer
-                
-
-
-
+    

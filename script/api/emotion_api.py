@@ -18,7 +18,8 @@ class EmotionApi:
         response = client.analyze_sentiment(
             request={"document": document, "encoding_type": encoding_type}
         )
-        # Get overall sentiment of the input document
+
+        # Get overall sentiment of the input document -> entfernen am Schluss
         print(f"Document sentiment score: {response.document_sentiment.score}")
         print(f"Document sentiment magnitude: {response.document_sentiment.magnitude}")
 
