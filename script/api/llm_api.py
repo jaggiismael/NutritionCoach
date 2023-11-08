@@ -7,7 +7,7 @@ class LlmApi:
         openai.api_key = key
         MODEL_DI = "meta-llama/Llama-2-70b-chat-hf"
 
-    def sendPrompt(self, messages, temperature): 
+    def send_prompt(self, messages, temperature): 
         chat_completion = openai.ChatCompletion.create(
         model="meta-llama/Llama-2-70b-chat-hf",
         messages=messages,

@@ -3,7 +3,7 @@ from google.cloud import language_v2
 class EmotionApi:
 
     #Changed function from https://cloud.google.com/natural-language/docs/analyzing-sentiment
-    def getEmotion(self, text):
+    def get_emotion(self, text):
         client = language_v2.LanguageServiceClient()
         document_type_in_plain_text = language_v2.Document.Type.PLAIN_TEXT
 
@@ -18,9 +18,5 @@ class EmotionApi:
         response = client.analyze_sentiment(
             request={"document": document, "encoding_type": encoding_type}
         )
-
-        # Get overall sentiment of the input document -> entfernen am Schluss
-        print(f"Document sentiment score: {response.document_sentiment.score}")
-        print(f"Document sentiment magnitude: {response.document_sentiment.magnitude}")
 
         return response.document_sentiment.score
