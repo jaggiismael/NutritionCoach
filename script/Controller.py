@@ -22,6 +22,7 @@ class Controller:
         self.__user_manager = UserManager()
         self.__user_interaction_manager = UserInteractionManager(platform)
         self.__emotion_api = EmotionApi()
+        #Configure logging
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s [%(levelname)s] - %(message)s',
@@ -30,11 +31,13 @@ class Controller:
             ]
         )
 
+    #Main function. Controls the flow of the entire programme
     def start(self):
         logging.info("Application started")
         self.__user_interaction_manager.greeting()
         exit = False
         profile_ok = False
+        #First decision: Login or create a new profile. Will be executed until you have successfully logged in or created a profile
         while not profile_ok:
             user_input = self.__user_interaction_manager.input_decision("Would you like to Login or Register?\n", "login", "register").upper()
             if user_input == "LOGIN":
@@ -55,6 +58,7 @@ class Controller:
             else:
                 self.__user_interaction_manager.output_emotion("That is not a valid answer", Emotion.CONFUSED)
 
+        #Main menu. Choice between nutritional coaching and meal suggestions
         while not exit:
             user_input = self.__user_interaction_manager.input_decision("Are you interested in asking me some nutrition-related questions or would you prefer meal suggestions for today?\n", "nutrition", "meal").upper()
             if user_input == "NUTRITION":
@@ -69,8 +73,9 @@ class Controller:
             else:
                 self.__user_interaction_manager.output_emotion("That is not a valid answer", Emotion.CONFUSED)
         
-        #self.__user_interaction_manager.output("OK bye, I hope to see you again soon")
+        self.__user_interaction_manager.output("OK bye, I hope to see you again soon")
         
+    #Function for logging in the user with first and last name
     def __login(self):
         logging.info("Start Login")
         firstname = self.__user_interaction_manager.input_terminal("To get your user profile, enter your Firstname and Lastname\nFirstname: ")
@@ -85,6 +90,7 @@ class Controller:
         return True
 
 
+    #Function for creating a profile for a new user
     def __register(self):
         logging.info("Start Register")
         firstname = self.__user_interaction_manager.input_terminal("Enter your first name: ")
@@ -150,6 +156,7 @@ class Controller:
         logging.info("User-Profile saved")
         return True
 
+    #Function tests whether an input is a numerical value and whether it is between two values
     def __check_number(self, input, min, max):
         try:
             number = float(input)  
@@ -164,7 +171,9 @@ class Controller:
             logging.info("Wrong Input")
             return False 
         
+    #Main function for nutritional coaching. Questions are received from the user and answers are returned by the LLM
     def __nutritional_coaching(self):
+        #Instructions on how the LLM should behave
         systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken ongoing conversation. Use this informations to provide personalised answers: " + self.user.__str__()
         messages = [{"role": "system", "content": ""}]
         while True:
@@ -173,9 +182,11 @@ class Controller:
             if(userRequest.lower() == "exit"):
                 logging.info("Nutrition Coaching finished")
                 break
+            #Tells the user that answers are being searched for
             self.__user_interaction_manager.output(self.__get_thinking_phrase())
             logging.info("Question asked: " + userRequest)
 
+            #Adds previous conversation to the context so that LLM can respond to previous answers
             context = messages
             messages.append({"role": "user", "content": systemPrompt + ". Question: " + userRequest})
 
@@ -183,18 +194,22 @@ class Controller:
             attempts = 0
             while not answerVerified:
 
+                #If the LLM response is not confirmed by the control layer for the third time, an error message is sent to the user
                 if attempts > 2:
                     self.__user_interaction_manager.output_emotion("I'm sorry but I can't answer to this question, please ask something else", Emotion.SAD)
                     logging.info("Question answering not possible")
                     answerVerified = True
                     break
 
+                #Send prompt to the LLM
                 answer = self.__llm_api.send_prompt(messages, 0.2)
                 logging.info("Answer: " + answer)
 
+                #Response is checked by the control layer
                 if self.__check_answer(context, userRequest, answer):
                     messages.append({"role": "assistant", "content": answer})
-                    #Emotion detection
+
+                    #Sends the first two sentences of the answer to the API to find the emotion in the answer
                     emotion = self.__emotion_api.get_emotion(self.__get_two_sentences(answer))
                     if 0.25 <= emotion <= 1.0:
                         self.__user_interaction_manager.output_emotion(answer, Emotion.HAPPY)
@@ -210,6 +225,7 @@ class Controller:
                 else:
                     attempts += 1
 
+    #Function works as a control layer. Answers are sent to the LLM again with the context and checked to see whether they match the question.
     def __check_answer(self, context, question, answer):
         contextStr = ','.join(str(v) for v in context)
         messages = [{"role": "system", "content": "Your job is to check whether the answer fits the question based on the context. If the answer and the question match, answer: True. If the last question and the answer do not match, answer: False. The answer must not be racist, sexist or offensive. Don't explain the decision, just reply with true or false."}, 
@@ -224,12 +240,15 @@ class Controller:
         logging.info("Answer not verified")
         return False
     
+    #Function for creating meal suggestions.
     def __meal_suggestion(self):
+        #Instructions on how the LLM should behave and what to answer
         systemPrompt = "I would like a new recommendation on what to eat for breakfast, lunch and dinner. I only want one recommendation per meal. I want it in 3-4 sentences and without a greeting. The recommendation must be adapted to me, here is my profile: "  + self.user.__str__()
         messages = [{"role": "system", "content": ""}, {"role": "user", "content": systemPrompt}]
         self.__user_interaction_manager.output("Ok I'm thinking about what you could eat today")
         suggestion_wanted = True
         while suggestion_wanted:
+            #Send prompt to the LLM
             answer = self.__llm_api.send_prompt(messages, 0.2)
             logging.info("Meal Suggestion: " + answer)
 
@@ -237,6 +256,7 @@ class Controller:
             self.__user_interaction_manager.output(answer)
 
             answer_ok = False
+            #Ask if the user wants a new suggestion
             while not answer_ok:
                 userInput = self.__user_interaction_manager.input_decision("You want to get new suggestions? (Yes / No)\n", "yes", "no").upper()
                 if userInput == "NO":
@@ -244,6 +264,7 @@ class Controller:
                     answer_ok = True
                     suggestion_wanted = False
                 elif userInput == "YES":
+                    #Add the question and answer to the context to avoid receiving the same suggestions again.
                     messages.append({"role": "assistant", "content": answer})
                     messages.append({"role": "user", "content": systemPrompt})
                     logging.info("User want new suggestions")
@@ -252,6 +273,7 @@ class Controller:
                 else:
                     self.__user_interaction_manager.output_emotion("Thats not a valid answer", Emotion.CONFUSED)
 
+    #Function that truncates and returns the first two sentences of a text
     def __get_two_sentences(self, answer):
         sentences = re.split(r'(?<=[.!?])\s', answer)
         if len(sentences) >= 2:
@@ -260,6 +282,7 @@ class Controller:
             newAnswer = answer
         return newAnswer
     
+    #Function that returns random sentences to bridge waiting times
     def __get_thinking_phrase(self):
         phrases = [
             "I'm thinking about a correct response",

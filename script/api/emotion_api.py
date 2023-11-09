@@ -3,6 +3,8 @@ from google.cloud import language_v2
 class EmotionApi:
 
     #Changed function from https://cloud.google.com/natural-language/docs/analyzing-sentiment
+    #Sends text in plain format to the Google Natural Language API and returns the sentiment. 
+    #Return Value: Decimal values with a decimal place between -1 and 1 
     def get_emotion(self, text):
         client = language_v2.LanguageServiceClient()
         document_type_in_plain_text = language_v2.Document.Type.PLAIN_TEXT

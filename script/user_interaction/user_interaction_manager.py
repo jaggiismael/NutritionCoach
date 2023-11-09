@@ -13,9 +13,8 @@ class UserInteractionManager:
     def __init__(self, platform):
         self.__platform = platform
         
-        #Import libraries for the robot only if nessesary
         if platform == "ROBOT":
-            #Imports
+            #Imports for QTrobot
             import rospy
             from qt_robot_interface.srv import emotion_show, audio_play, behavior_talk_text
             from qt_gspeech_app.srv import speech_recognize
@@ -29,7 +28,7 @@ class UserInteractionManager:
             self.__audio_play = rospy.ServiceProxy('/qt_robot/audio/play', audio_play)
             self.__synchronizer = TaskSynchronizer()
           
-
+    #Greeting when starting the programme
     def greeting(self):
         if self.__platform == "TERMINAL":
             print("Hi I'm your personal nutrition coach, I will be happy to help you. You can always leave, just enter exit.\n")
@@ -41,7 +40,8 @@ class UserInteractionManager:
                 (0, lambda: self.__behavior_talk("Hello! I'm Q T and I'm your personal nutrition coach. You can always leave, just say exit.")),
                 (0, lambda: os.system("rosservice call /qt_robot/gesture/play 'name: 'QT/hi''"))
             ])
-            
+
+    #Output to the user including an emotion     
     def output_emotion(self, text, emotion):
         if self.__platform == "TERMINAL":
             print(text)
@@ -66,33 +66,41 @@ class UserInteractionManager:
                 (0, lambda: os.system("rosservice call /qt_robot/gesture/play 'name: '"+gesture+"''"))
             ])
 
+    #Normal output to user
     def output(self, text):
         if self.__platform == "TERMINAL":
             print(text)
         else:
             self.__behavior_talk(text)
 
+    #User input with predefined input options, Return Value: User input in text form 
     def input_decision(self, text, opt1, opt2):
         if self.__platform == "TERMINAL":
             return input(text)
         else:
-            self.__behavior_talk(text)    
+            self.__behavior_talk(text)
+            #Shows the user that they can now speak using a signal.
             self.__audio_play("infobleep", "")
             
+            #STT of the user input
             answer = self.__recognize_speech("en_US",[opt1, opt2, "exit"], 10).transcript
             print("I understood: " + answer)
             return answer
-        
+
+    #User input without predefined input options, Return Value: User input in text form 
     def input(self, text):
         if self.__platform == "TERMINAL":
             return input(text)
         else:
             print("Robot Online Speech Recognition")
-            self.__behavior_talk(text)    
+            self.__behavior_talk(text)
+            #Shows the user that they can now speak using a signal.
             self.__audio_play("infobleep", "")
+            #STT of the user input
             answer = self.__recognize_speech("en_US", [], 10).transcript
             print(answer)
             return input(text)
 
+    #User input via the terminal, Return Value: User input in text form 
     def input_terminal(self, text):
         return input(text)

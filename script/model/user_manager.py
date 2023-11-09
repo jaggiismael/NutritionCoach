@@ -6,6 +6,7 @@ class UserManager:
     def __init__(self):
         self.__filename = "user_data.json"
     
+    #Save user to JSON File
     def writeJSON(self, user):
         
         with open(self.__filename, "r") as file:
@@ -16,6 +17,8 @@ class UserManager:
         with open(self.__filename, "w") as json_file:
             json.dump(data, json_file)
 
+
+    #Search for user in JSON File and return the first user found. Based on first- and lastname
     def getUser(self, firstname, lastname):
 
         with open(self.__filename, 'r') as file:
