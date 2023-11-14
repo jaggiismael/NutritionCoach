@@ -1,6 +1,13 @@
 from enum import Enum
 from utils.synchronizer import TaskSynchronizer
+from api.tts_api import TtsApi
 import os
+
+import winsound
+
+
+
+
 
 
 class Emotion(Enum):
@@ -27,11 +34,19 @@ class UserInteractionManager:
             self.__online_recognize_speech = rospy.ServiceProxy('/qt_robot/gspeech/recognize', speech_recognize)
             self.__audio_play = rospy.ServiceProxy('/qt_robot/audio/play', audio_play)
             self.__synchronizer = TaskSynchronizer()
+        else:
+            self.__tts_api = TtsApi()
           
     #Greeting when starting the programme
     def greeting(self):
+        
         if self.__platform == "TERMINAL":
             print("Hi I'm your personal nutrition coach, I will be happy to help you. You can always leave, just enter exit.\n")
+            #self.__tts_api.text_to_wav("en-US-Neural2-F", "You want to get new suggestions?")
+
+
+            winsound.PlaySound('audio_files/greeting.wav', winsound.SND_FILENAME)
+
         else:
             print("Greeting")
             
@@ -44,15 +59,20 @@ class UserInteractionManager:
     #Output to the user including an emotion     
     def output_emotion(self, text, emotion):
         if self.__platform == "TERMINAL":
+            if emotion.name == "CONFUSED":
+                winsound.PlaySound('audio_files/wrong_input.wav', winsound.SND_FILENAME)
+            else:
+                self.__tts_api.text_to_wav("en-US-Neural2-F", text)
+                winsound.PlaySound('audio_files/en-US-Neural2-F.wav', winsound.SND_FILENAME)
             print(text)
         else:
-            if(emotion.name == "HAPPY"):
+            if emotion.name == "HAPPY":
                 emotion = "QT/happy"
                 gesture = "QT/happy"
-            elif(emotion.name == "SAD"):
+            elif emotion.name == "SAD":
                 emotion = "QT/sad"
                 gesture = "QT/sad"
-            elif(emotion.name == "CONFUSED"):
+            elif emotion.name == "CONFUSED":
                 emotion = "QT/confused"
                 gesture = "QT/surprise"
             else:
@@ -69,13 +89,22 @@ class UserInteractionManager:
     #Normal output to user
     def output(self, text):
         if self.__platform == "TERMINAL":
+            self.__tts_api.text_to_wav("en-US-Neural2-F", text)
+            winsound.PlaySound('audio_files/en-US-Neural2-F.wav', winsound.SND_FILENAME)
             print(text)
         else:
+            print(text)
             self.__behavior_talk(text)
 
     #User input with predefined input options, Return Value: User input in text form 
     def input_decision(self, text, opt1, opt2):
         if self.__platform == "TERMINAL":
+            if opt1.upper() == "LOGIN":
+                winsound.PlaySound('audio_files/login_register.wav', winsound.SND_FILENAME)
+            elif opt1.upper() == "YES":
+                winsound.PlaySound('audio_files/new_suggestion.wav', winsound.SND_FILENAME)
+            else:
+                winsound.PlaySound('audio_files/main_menu.wav', winsound.SND_FILENAME)
             return input(text)
         else:
             self.__behavior_talk(text)
@@ -104,3 +133,12 @@ class UserInteractionManager:
     #User input via the terminal, Return Value: User input in text form 
     def input_terminal(self, text):
         return input(text)
+    
+    #Goodbye if user want to close the program
+    def goodbye(self):
+        if self.__platform == "TERMINAL":
+            winsound.PlaySound('audio_files/goodbye.wav', winsound.SND_FILENAME)
+        else:
+            print("text")
+            self.__behavior_talk("text")
+    

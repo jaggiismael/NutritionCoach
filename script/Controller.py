@@ -18,7 +18,7 @@ class Controller:
                 os.environ[key] = value
         llm_key = os.environ.get("LLM_KEY")
 
-        self.__llm_api = LlmApi("")
+        self.__llm_api = LlmApi(llm_key)
         self.__user_manager = UserManager()
         self.__user_interaction_manager = UserInteractionManager(platform)
         self.__emotion_api = EmotionApi()
@@ -41,7 +41,7 @@ class Controller:
         while not profile_ok:
             user_input = self.__user_interaction_manager.input_decision("Would you like to Login or Register?\n", "login", "register").upper()
             if user_input == "LOGIN":
-                self.__user_interaction_manager.output("Please enter your next informations in the terminal")
+                self.__user_interaction_manager.output("Please enter your informations in the terminal")
                 profile_ok = self.__login()
                 if profile_ok:
                     self.__user_interaction_manager.output_emotion("Welcome back " + self.user.firstname, Emotion.HAPPY)
@@ -73,7 +73,7 @@ class Controller:
             else:
                 self.__user_interaction_manager.output_emotion("That is not a valid answer", Emotion.CONFUSED)
         
-        self.__user_interaction_manager.output("OK bye, I hope to see you again soon")
+        self.__user_interaction_manager.goodbye()
         
     #Function for logging in the user with first and last name
     def __login(self):
@@ -252,7 +252,6 @@ class Controller:
             answer = self.__llm_api.send_prompt(messages, 0.2)
             logging.info("Meal Suggestion: " + answer)
 
-            print(answer)
             self.__user_interaction_manager.output(answer)
 
             answer_ok = False
