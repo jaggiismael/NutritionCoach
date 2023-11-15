@@ -22,4 +22,3 @@ class TtsApi:
         filename = f"audio_files/{voice_name}.wav"
         with open(filename, "wb") as out:
             out.write(response.audio_content)
-            #print(f'Generated speech saved to "{filename}"')

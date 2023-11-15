@@ -39,20 +39,20 @@ class Controller:
         profile_ok = False
         #First decision: Login or create a new profile. Will be executed until you have successfully logged in or created a profile
         while not profile_ok:
-            user_input = self.__user_interaction_manager.input_decision("Would you like to Login or Register?\n", "login", "register").upper()
-            if user_input == "LOGIN":
+            user_input = self.__user_interaction_manager.input_decision("Would you like to Sign in or Register?", "sign", "register").upper()
+            if "SIGN" in user_input:
                 self.__user_interaction_manager.output("Please enter your informations in the terminal")
                 profile_ok = self.__login()
                 if profile_ok:
                     self.__user_interaction_manager.output_emotion("Welcome back " + self.user.firstname, Emotion.HAPPY)
                     logging.info("Login successful")
-            elif user_input == "REGISTER":
+            elif "REGISTER" in user_input:
                 self.__user_interaction_manager.output("Please enter the asked informations in the terminal")
                 profile_ok= self.__register()
                 if profile_ok:
                     self.__user_interaction_manager.output_emotion("Nice to meet you, " + self.user.firstname, Emotion.HAPPY)
                     logging.info("Profile Creation successful")
-            elif user_input == "EXIT":
+            elif "EXIT" in user_input:
                 exit = True
                 profile_ok = True
             else:
@@ -60,14 +60,14 @@ class Controller:
 
         #Main menu. Choice between nutritional coaching and meal suggestions
         while not exit:
-            user_input = self.__user_interaction_manager.input_decision("Are you interested in asking me some nutrition-related questions or would you prefer meal suggestions for today?\n", "nutrition", "meal").upper()
-            if user_input == "NUTRITION":
+            user_input = self.__user_interaction_manager.input_decision("Are you interested in asking me some nutrition-related questions or would you prefer meal suggestions for today?", "nutrition", "meal").upper()
+            if "NUTRITION" in user_input:
                 logging.info("Start Nutrition Coaching")
                 self.__nutritional_coaching()
-            elif user_input == "MEAL":
+            elif "MEAL" in user_input:
                 logging.info("Start Meal Suggestion")
                 self.__meal_suggestion()
-            elif user_input == "EXIT":
+            elif "EXIT" in user_input:
                 logging.info("Application finished")
                 exit = True
             else:
@@ -141,13 +141,12 @@ class Controller:
             if not self.__check_number(habit, 1, 4):
                 habit = None
         if int(habit) == 1:
-        
             habit = "Omnivor"
-        if int(habit) == 2:
+        elif int(habit) == 2:
             habit = "Vegetarian"
-        if int(habit) == 3:
+        elif int(habit) == 3:
             habit = "Vegan"
-        if int(habit) == 4:
+        elif int(habit) == 4:
             habit = "Pescetarian"
         logging.info("Eating Habits: " + habit)
 
@@ -177,8 +176,7 @@ class Controller:
         systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken ongoing conversation. Use this informations to provide personalised answers: " + self.user.__str__()
         messages = [{"role": "system", "content": ""}]
         while True:
-            self.__user_interaction_manager.output("Please enter your next question")
-            userRequest = self.__user_interaction_manager.input("Which question about nutrition you want to ask? \n")
+            userRequest = self.__user_interaction_manager.input("Which question about nutrition you want to ask?")
             if(userRequest.lower() == "exit"):
                 logging.info("Nutrition Coaching finished")
                 break
@@ -257,12 +255,12 @@ class Controller:
             answer_ok = False
             #Ask if the user wants a new suggestion
             while not answer_ok:
-                userInput = self.__user_interaction_manager.input_decision("You want to get new suggestions? (Yes / No)\n", "yes", "no").upper()
-                if userInput == "NO":
+                userInput = self.__user_interaction_manager.input_decision("You want to get new suggestions? (Yes / No)", "yes", "no").upper()
+                if "NO" in userInput:
                     logging.info("Meal Suggestion finished")
                     answer_ok = True
                     suggestion_wanted = False
-                elif userInput == "YES":
+                elif "YES" in userInput:
                     #Add the question and answer to the context to avoid receiving the same suggestions again.
                     messages.append({"role": "assistant", "content": answer})
                     messages.append({"role": "user", "content": systemPrompt})

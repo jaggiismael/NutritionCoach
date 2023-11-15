@@ -1,14 +1,9 @@
 from enum import Enum
+from api.stt_api import SttApi
 from utils.synchronizer import TaskSynchronizer
 from api.tts_api import TtsApi
 import os
-
 import winsound
-
-
-
-
-
 
 class Emotion(Enum):
     HAPPY = 1
@@ -36,20 +31,14 @@ class UserInteractionManager:
             self.__synchronizer = TaskSynchronizer()
         else:
             self.__tts_api = TtsApi()
+            self.__stt_api = SttApi()
           
     #Greeting when starting the programme
     def greeting(self):
-        
+        print("Hi I'm your personal nutrition coach, I will be happy to help you. You can always leave, just enter exit.")
         if self.__platform == "TERMINAL":
-            print("Hi I'm your personal nutrition coach, I will be happy to help you. You can always leave, just enter exit.\n")
-            #self.__tts_api.text_to_wav("en-US-Neural2-F", "You want to get new suggestions?")
-
-
-            winsound.PlaySound('audio_files/greeting.wav', winsound.SND_FILENAME)
-
+            winsound.PlaySound("audio_files/greeting.wav", winsound.SND_FILENAME)
         else:
-            print("Greeting")
-            
             self.__synchronizer.sync([
                 (0, lambda: self.__emotionShow("QT/happy")),
                 (0, lambda: self.__behavior_talk("Hello! I'm Q T and I'm your personal nutrition coach. You can always leave, just say exit.")),
@@ -58,13 +47,13 @@ class UserInteractionManager:
 
     #Output to the user including an emotion     
     def output_emotion(self, text, emotion):
+        print(text)
         if self.__platform == "TERMINAL":
             if emotion.name == "CONFUSED":
-                winsound.PlaySound('audio_files/wrong_input.wav', winsound.SND_FILENAME)
+                winsound.PlaySound("audio_files/wrong_input.wav", winsound.SND_FILENAME)
             else:
                 self.__tts_api.text_to_wav("en-US-Neural2-F", text)
-                winsound.PlaySound('audio_files/en-US-Neural2-F.wav', winsound.SND_FILENAME)
-            print(text)
+                winsound.PlaySound("audio_files/en-US-Neural2-F.wav", winsound.SND_FILENAME)   
         else:
             if emotion.name == "HAPPY":
                 emotion = "QT/happy"
@@ -78,7 +67,6 @@ class UserInteractionManager:
             else:
                 emotion = "QT/neutral"
                 gesture = "QT/neutral"
-            print(text)
             
             self.__synchronizer.sync([
                 (0, lambda: self.__behavior_talk(text)),
@@ -88,24 +76,25 @@ class UserInteractionManager:
 
     #Normal output to user
     def output(self, text):
+        print(text)
         if self.__platform == "TERMINAL":
             self.__tts_api.text_to_wav("en-US-Neural2-F", text)
-            winsound.PlaySound('audio_files/en-US-Neural2-F.wav', winsound.SND_FILENAME)
-            print(text)
+            winsound.PlaySound("audio_files/en-US-Neural2-F.wav", winsound.SND_FILENAME)
         else:
-            print(text)
             self.__behavior_talk(text)
 
     #User input with predefined input options, Return Value: User input in text form 
     def input_decision(self, text, opt1, opt2):
+        print(text)
         if self.__platform == "TERMINAL":
-            if opt1.upper() == "LOGIN":
-                winsound.PlaySound('audio_files/login_register.wav', winsound.SND_FILENAME)
+            if opt1.upper() == "SIGN":
+                winsound.PlaySound("audio_files/login_register.wav", winsound.SND_FILENAME)
             elif opt1.upper() == "YES":
-                winsound.PlaySound('audio_files/new_suggestion.wav', winsound.SND_FILENAME)
+                winsound.PlaySound("audio_files/new_suggestion.wav", winsound.SND_FILENAME)
             else:
-                winsound.PlaySound('audio_files/main_menu.wav', winsound.SND_FILENAME)
-            return input(text)
+                winsound.PlaySound("audio_files/main_menu.wav", winsound.SND_FILENAME)
+            self.__recordAudio(3)
+            return self.__stt_api.transcribe_file("audio_files/recorded_audio.wav")
         else:
             self.__behavior_talk(text)
             #Shows the user that they can now speak using a signal.
@@ -119,8 +108,12 @@ class UserInteractionManager:
     #User input without predefined input options, Return Value: User input in text form 
     def input(self, text):
         if self.__platform == "TERMINAL":
-            return input(text)
+            print(text)
+            winsound.PlaySound("audio_files/nutrition_question.wav", winsound.SND_FILENAME)
+            self.__recordAudio(6)
+            return self.__stt_api.transcribe_file("audio_files/recorded_audio.wav")
         else:
+            """
             print("Robot Online Speech Recognition")
             self.__behavior_talk(text)
             #Shows the user that they can now speak using a signal.
@@ -128,6 +121,7 @@ class UserInteractionManager:
             #STT of the user input
             answer = self.__recognize_speech("en_US", [], 10).transcript
             print(answer)
+            """
             return input(text)
 
     #User input via the terminal, Return Value: User input in text form 
@@ -136,9 +130,54 @@ class UserInteractionManager:
     
     #Goodbye if user want to close the program
     def goodbye(self):
+        print("Ok bye, I hope to see you again soon.")
         if self.__platform == "TERMINAL":
-            winsound.PlaySound('audio_files/goodbye.wav', winsound.SND_FILENAME)
+            winsound.PlaySound("audio_files/goodbye.wav", winsound.SND_FILENAME)
         else:
-            print("text")
-            self.__behavior_talk("text")
+            self.__behavior_talk("Ok bye, I hope to see you again soon.")
+
+    #Function to record audio in terminal
+    #Parts of the function taken from https://medium.com/@sarahisdevs/create-a-voice-recorder-using-python-daadd9523e98
+    def __recordAudio(self, seconds):
+        import pyaudio
+        import wave
+
+        FORMAT = pyaudio.paInt16  # Format of audio samples (16-bit signed integers)
+        CHANNELS = 2              # Number of audio channels (1 for mono, 2 for stereo)
+        RATE = 44100              # Sample rate (samples per second)
+        CHUNK = 1024              # Number of frames per buffer
+
+        #Open the audio stream
+        p = pyaudio.PyAudio()
+        stream = p.open(format=FORMAT,
+            channels=CHANNELS,
+            rate=RATE,
+            input=True,
+            frames_per_buffer=CHUNK)
+        
+        winsound.PlaySound("audio_files/infobleep.mp3", winsound.SND_FILENAME)
+        print("Recording...")
+
+        frames = []
+        #Recording
+        for _ in range(0, int(RATE / CHUNK * seconds)):
+            data = stream.read(CHUNK)
+            frames.append(data)
+
+        print("Recording finished.")
+        winsound.PlaySound("audio_files/infobleep.mp3", winsound.SND_FILENAME)
+
+        # Stop and close the audio stream
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+        # Save the recorded audio as a .wav file
+        WAVE_OUTPUT_FILENAME = "audio_files/recorded_audio.wav"
+        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(p.get_sample_size(FORMAT))
+        wf.setframerate(RATE)
+        wf.writeframes(b''.join(frames))
+        wf.close()
     
