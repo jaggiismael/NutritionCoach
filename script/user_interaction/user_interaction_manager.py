@@ -93,7 +93,7 @@ class UserInteractionManager:
                 winsound.PlaySound("audio_files/new_suggestion.wav", winsound.SND_FILENAME)
             else:
                 winsound.PlaySound("audio_files/main_menu.wav", winsound.SND_FILENAME)
-            self.__recordAudio(3)
+            self.__record_audio(3)
             return self.__stt_api.transcribe_file("audio_files/recorded_audio.wav")
         else:
             self.__behavior_talk(text)
@@ -110,7 +110,9 @@ class UserInteractionManager:
         if self.__platform == "TERMINAL":
             print(text)
             winsound.PlaySound("audio_files/nutrition_question.wav", winsound.SND_FILENAME)
-            self.__recordAudio(6)
+            winsound.PlaySound("audio_files/press_enter.wav", winsound.SND_FILENAME)
+            input()
+            self.__record_audio(6)
             return self.__stt_api.transcribe_file("audio_files/recorded_audio.wav")
         else:
             """
@@ -138,7 +140,7 @@ class UserInteractionManager:
 
     #Function to record audio in terminal
     #Parts of the function taken from https://medium.com/@sarahisdevs/create-a-voice-recorder-using-python-daadd9523e98
-    def __recordAudio(self, seconds):
+    def __record_audio(self, seconds):
         import pyaudio
         import wave
 
