@@ -35,7 +35,7 @@ class UserInteractionManager:
           
     #Greeting when starting the programme
     def greeting(self):
-        print("Hi I'm your personal nutrition coach, I will be happy to help you. You can always leave, just enter exit.")
+        print("Hi I'm your personal nutrition coach, I will be happy to help you. You can always leave, just say exit.")
         if self.__platform == "TERMINAL":
             winsound.PlaySound("audio_files/greeting.wav", winsound.SND_FILENAME)
         else:

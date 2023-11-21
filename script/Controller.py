@@ -173,11 +173,11 @@ class Controller:
     #Main function for nutritional coaching. Questions are received from the user and answers are returned by the LLM
     def __nutritional_coaching(self):
         #Instructions on how the LLM should behave
-        systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting. Answer as if it were a spoken ongoing conversation. Use this informations to provide personalised answers: " + self.user.__str__()
+        systemPrompt = "You are a nutrition coach and only answer my questions if they are related to nutrition. If they are about something else, ignore them. If its about nutrition give a short and helpful answer. Always answer in max 5 sentences and without a greeting or special characters. Answer as if it were a spoken ongoing conversation. Use this informations to provide personalised answers: " + self.user.__str__()
         messages = [{"role": "system", "content": ""}]
         while True:
             userRequest = self.__user_interaction_manager.input("Which question about nutrition you want to ask?")
-            if(userRequest.lower() == "exit"):
+            if("exit" in userRequest.lower()):
                 logging.info("Nutrition Coaching finished")
                 break
             #Tells the user that answers are being searched for
@@ -241,7 +241,7 @@ class Controller:
     #Function for creating meal suggestions.
     def __meal_suggestion(self):
         #Instructions on how the LLM should behave and what to answer
-        systemPrompt = "I would like a new recommendation on what to eat for breakfast, lunch and dinner. I only want one recommendation per meal. I want it in 3-4 sentences and without a greeting. The recommendation must be adapted to me, here is my profile: "  + self.user.__str__()
+        systemPrompt = "I would like a new recommendation on what to eat for breakfast, lunch and dinner. I only want one recommendation per meal. I want it in 3-4 sentences and without a greeting. The recommendation must be adapted to me with my allergies and my eating habits following profile: "  + self.user.__str__()
         messages = [{"role": "system", "content": ""}, {"role": "user", "content": systemPrompt}]
         self.__user_interaction_manager.output("Ok I'm thinking about what you could eat today")
         suggestion_wanted = True
